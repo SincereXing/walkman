@@ -209,6 +209,77 @@ final class PlaylistStore: ObservableObject {
         save()
     }
 
+    // MARK: - 归档导出 / 导入
+
+    /// 导出会被跳过的曲目数(本地文件夹导入的歌)。UI 用它提示用户别白等。
+    var localOnlyTrackCount: Int {
+        Set(playlists.flatMap { $0.trackIDs }).filter { isLocalImport($0) }.count
+    }
+
+    /// 打包成可以搬去另一台设备 / 另一个 bundle id 的归档。
+    func makeArchive() -> PlaylistArchive {
+        // 本地导入的歌(songmid 是 lf://)带的是本机 bookmark,换个 app 就解析不了,
+        // 跟上云的口径保持一致:不导出。整张歌单都是本地歌的话整张跳过,免得对面
+        // 收到一堆点进去空白的壳歌单。
+        let exportable: [PlaylistMeta] = playlists.compactMap { p in
+            var copy = p
+            copy.trackIDs = p.trackIDs.filter { !isLocalImport($0) }
+            if copy.trackIDs.isEmpty && !p.trackIDs.isEmpty { return nil }
+            return copy
+        }
+        let referenced = Set(exportable.flatMap { $0.trackIDs })
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
+        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
+        return PlaylistArchive(
+            format: PlaylistArchive.format,
+            version: PlaylistArchive.currentVersion,
+            exportedAt: Date(),
+            appVersion: "\(version) (\(build))",
+            playlists: exportable,
+            tracks: trackBank.filter { referenced.contains($0.key) }
+        )
+    }
+
+    /// 合并式导入 —— 只加不删,本地已有的歌单和曲目不会被归档覆盖掉。
+    @discardableResult
+    func importArchive(_ archive: PlaylistArchive) -> PlaylistImportSummary {
+        var summary = PlaylistImportSummary()
+        // 曲目先并进曲库。同 id 以归档为准 —— 导出方通常带着更全的元数据
+        // (专辑、时长、封面),本地那份可能是搜索结果里的简版。
+        trackBank.merge(archive.tracks) { _, new in new }
+
+        for incoming in archive.playlists {
+            // 先按 id 认,再按名字认:id 命中说明是同一歌单的另一份副本;名字命中
+            // 覆盖"对面删了重建、id 已经不同"的情况,跟 dedupeByName 的口径一致。
+            let match = playlists.firstIndex(where: { $0.id == incoming.id })
+                ?? playlists.firstIndex(where: { $0.name == incoming.name })
+            if let idx = match {
+                var seen = Set(playlists[idx].trackIDs)
+                var added = 0
+                for tid in incoming.trackIDs where seen.insert(tid).inserted {
+                    playlists[idx].trackIDs.append(tid)
+                    added += 1
+                }
+                if added > 0 {
+                    playlists[idx].updatedAt = Date()
+                    summary.mergedPlaylists += 1
+                    summary.addedTracks += added
+                }
+            } else {
+                playlists.append(incoming)
+                summary.newPlaylists += 1
+                summary.addedTracks += incoming.trackIDs.count
+            }
+            // 这个歌单以前删过、现在又导回来 —— 墓碑必须撤掉,否则下面 save() 会把
+            // 「已删除」一起推上云,其它设备(和本机下一次 pullFromCloud)转头又把它抹了。
+            tombstones.removeValue(forKey: incoming.id.uuidString)
+        }
+
+        // 归档可能比歌单全(对面从歌单里删过歌),没人引用的曲目不留。内含 save()。
+        cleanTrackBank()
+        return summary
+    }
+
     private func cleanTrackBank() {
         let keep = Set(playlists.flatMap { $0.trackIDs })
         trackBank = trackBank.filter { keep.contains($0.key) }

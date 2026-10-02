@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>隐私政策 · 随便听 walkman</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --fg: #1c1c1e;
+    --muted: #6b6b70;
+    --rule: #e3e3e6;
+    --accent: #8B2440;
+    --card: #faf9f8;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #131315;
+      --fg: #ececee;
+      --muted: #9a9aa0;
+      --rule: #2c2c30;
+      --accent: #C18A4F;
+      --card: #1c1c1f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font: 16px/1.75 -apple-system, BlinkMacSystemFont, "PingFang SC",
+          "Helvetica Neue", "Microsoft YaHei", sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  main { max-width: 720px; margin: 0 auto; padding: 56px 24px 88px; }
+  h1 {
+    font-size: 30px; font-weight: 700; letter-spacing: -0.02em;
+    margin: 0 0 8px;
+  }
+  .updated { color: var(--muted); font-size: 14px; margin: 0 0 40px; }
+  h2 {
+    font-size: 19px; font-weight: 650; margin: 40px 0 12px;
+    padding-top: 24px; border-top: 1px solid var(--rule);
+  }
+  h2:first-of-type { border-top: none; padding-top: 0; }
+  p { margin: 0 0 14px; }
+  ul { margin: 0 0 14px; padding-left: 22px; }
+  li { margin-bottom: 8px; }
+  strong { font-weight: 650; }
+  a { color: var(--accent); text-decoration: none; overflow-wrap: anywhere; }
+  a:hover { text-decoration: underline; }
+  .lead {
+    background: var(--card);
+    border-left: 3px solid var(--accent);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 0 0 32px;
+  }
+  .lead p:last-child { margin-bottom: 0; }
+  footer {
+    margin-top: 56px; padding-top: 20px;
+    border-top: 1px solid var(--rule);
+    color: var(--muted); font-size: 14px;
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>隐私政策</h1>
+  <p class="updated">随便听 walkman · 最后更新：2026 年 8 月 23 日</p>
+
+  <div class="lead">
+    <p><strong>随便听没有后端服务器，也没有账号体系。我们不收集、不存储、不传输任何个人信息。</strong></p>
+    <p>本页说明 App 在你设备上会读写什么、以及会向哪些外部服务发起请求。</p>
+  </div>
+
+  <h2>我们不收集任何数据</h2>
+  <p>本 App 不含注册或登录流程，不要求你提供姓名、邮箱、手机号或任何其他身份信息。开发者没有任何服务器可以接收你的数据。</p>
+
+  <h2>你的数据存在哪里</h2>
+  <ul>
+    <li><strong>歌单、播放记录、下载记录、应用设置</strong>：仅保存在你的设备本地。</li>
+    <li><strong>iCloud 同步（可选，默认开启）</strong>：若启用，歌单与部分设置会通过 Apple 的 iCloud Key-Value 存储保存在<strong>你自己的</strong> iCloud 账户中。这份数据归你所有，开发者无法访问。你可以随时在设置中关闭。</li>
+    <li><strong>导入与下载的音频文件</strong>：保存在设备本地（Mac 上为 <code>~/Music/Walkman</code>），不会被上传到任何地方。</li>
+  </ul>
+
+  <h2>权限用途</h2>
+  <ul>
+    <li><strong>麦克风</strong>：仅在你主动点击「听歌识曲」时启用，通过 Apple 的 ShazamKit 采集环境音进行匹配。音频不会被录制、保存或发送给开发者。识别过程由 Apple 的系统框架完成，适用 Apple 的隐私政策。</li>
+    <li><strong>文件访问</strong>：仅在你主动选择文件夹导入本地音乐时使用，用于读取你指定目录下的音频文件及其内嵌标签。</li>
+  </ul>
+
+  <h2>网络请求</h2>
+  <p>App 会向各音乐平台的<strong>公开接口</strong>发起请求，以获取搜索结果、排行榜与歌单等音乐资讯信息，用于浏览与参考。这些请求不携带你的任何身份信息。</p>
+  <p>若你自行导入了第三方自定义音源脚本，该脚本发起的网络请求由脚本本身的逻辑决定。脚本在受限的 JavaScript 环境中运行、没有独立网络权限，其请求由 App 代为执行；但请求的目标与内容由脚本作者决定，开发者不对第三方脚本的行为负责。请只导入你信任的脚本。</p>
+
+  <h2>追踪与广告</h2>
+  <p>本 App 不含任何广告 SDK、分析 SDK 或追踪代码，不参与任何形式的跨 App 追踪，不使用 IDFA。</p>
+
+  <h2>儿童隐私</h2>
+  <p>本 App 不面向 13 岁以下儿童设计，也不会主动收集任何年龄相关信息。</p>
+
+  <h2>政策变更</h2>
+  <p>若本政策有更新，我们会修改本页顶部的「最后更新」日期。由于 App 不收集数据，重大变更的可能性很低。</p>
+
+  <h2>联系方式</h2>
+  <p>问题与反馈请提交至 <a href="https://github.com/SincereXing/walkman/issues">GitHub Issues</a>。</p>
+
+  <footer>
+    随便听 walkman · <a href="https://github.com/SincereXing/walkman">github.com/SincereXing/walkman</a>
+  </footer>
+</main>
+</body>
+</html>

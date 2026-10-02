@@ -1,11 +1,20 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct SettingsView: View {
     @EnvironmentObject var settings: SettingsStore
     @EnvironmentObject var sources: SourceManager
+    @EnvironmentObject var playlists: PlaylistStore
     @ObservedObject private var cloud = CloudSync.shared
     /// 进页面时算一次即可 —— 统计磁盘占用要遍历目录,不适合每次刷新都做
     @State private var cacheSize = 0
+
+    /// 点「导出」时才编码,编好放这儿交给 fileExporter 写盘。
+    @State private var exportDoc: PlaylistArchiveDocument?
+    @State private var showExporter = false
+    @State private var showImporter = false
+    /// 导入/导出结束后给用户的一句话反馈(成功和失败共用)。
+    @State private var transferMessage: String?
 
     // 辅助编译期环境判断
     private var isMacCatalyst: Bool {
@@ -126,6 +135,24 @@ struct SettingsView: View {
             }
 
             Section {
+                Button {
+                    exportArchive()
+                } label: {
+                    Label("导出歌单到文件", systemImage: "square.and.arrow.up")
+                }
+                .disabled(playlists.playlists.isEmpty)
+                Button {
+                    showImporter = true
+                } label: {
+                    Label("从文件导入歌单", systemImage: "square.and.arrow.down")
+                }
+            } header: {
+                Text("歌单迁移")
+            } footer: {
+                Text(transferFooter)
+            }
+
+            Section {
                 Toggle("显示调试提示", isOn: $settings.showDebugNotices)
             } header: {
                 Text("调试")
@@ -169,6 +196,75 @@ struct SettingsView: View {
         // 于当前 NavigationStack,不污染别处。
         .sheetNavBarSurface()
         .task { cacheSize = AppCache.diskUsage() }
+        .fileExporter(
+            isPresented: $showExporter,
+            document: exportDoc,
+            contentType: .json,
+            defaultFilename: exportFilename
+        ) { result in
+            if case .failure(let error) = result {
+                transferMessage = "导出失败:\(error.localizedDescription)"
+            }
+        }
+        .fileImporter(
+            isPresented: $showImporter,
+            allowedContentTypes: [.json],
+            allowsMultipleSelection: false
+        ) { result in
+            importArchive(result)
+        }
+        .alert("歌单迁移", isPresented: transferAlertPresented) {
+            Button("好") { transferMessage = nil }
+        } message: {
+            Text(transferMessage ?? "")
+        }
+    }
+
+    // MARK: - 歌单迁移
+
+    private var transferFooter: String {
+        var text = "导出成一个 JSON 文件,在另一台设备或另一个版本的 app 里导入即可。"
+            + "导入是合并式的,只会新增,不会覆盖或删掉已有歌单。"
+        let localOnly = playlists.localOnlyTrackCount
+        if localOnly > 0 {
+            text += "本地文件夹导入的 \(localOnly) 首歌不会被导出 —— 它们指向本机文件,换个 app 就读不到了。"
+        }
+        return text
+    }
+
+    private var transferAlertPresented: Binding<Bool> {
+        Binding(
+            get: { transferMessage != nil },
+            set: { if !$0 { transferMessage = nil } }
+        )
+    }
+
+    private var exportFilename: String {
+        let day = Date().formatted(.iso8601.year().month().day().dateSeparator(.dash))
+        return "随便听歌单-\(day)"
+    }
+
+    private func exportArchive() {
+        do {
+            let data = try PlaylistArchive.encoder().encode(playlists.makeArchive())
+            exportDoc = PlaylistArchiveDocument(data: data)
+            showExporter = true
+        } catch {
+            transferMessage = "导出失败:\(error.localizedDescription)"
+        }
+    }
+
+    private func importArchive(_ result: Result<[URL], Error>) {
+        do {
+            guard let url = try result.get().first else { return }
+            // 文件选择器给的是别处的 URL,读之前必须先要到访问权限。
+            let scoped = url.startAccessingSecurityScopedResource()
+            defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+            let archive = try PlaylistArchive.load(from: try Data(contentsOf: url))
+            transferMessage = playlists.importArchive(archive).message
+        } catch {
+            transferMessage = "导入失败:\(error.localizedDescription)"
+        }
     }
 
     private var appVersion: String {

@@ -34,6 +34,7 @@ struct IPadRootView: View {
     // 透传 —— 跟收藏/下载弹窗一个套路,免得受 Mac 隐式继承不稳定影响。
     @EnvironmentObject private var settings: SettingsStore
     @EnvironmentObject private var sources: SourceManager
+    @EnvironmentObject private var playlists: PlaylistStore
 
     private var selection: Binding<IPadDestination> {
         Binding(
@@ -110,6 +111,7 @@ struct IPadRootView: View {
             NavigationStack { SettingsView() }
                 .environmentObject(settings)
                 .environmentObject(sources)
+                .environmentObject(playlists)
                 .frame(width: 520, height: 640)
         }
         #else
@@ -117,6 +119,7 @@ struct IPadRootView: View {
             NavigationStack { SettingsView() }
                 .environmentObject(settings)
                 .environmentObject(sources)
+                .environmentObject(playlists)
                 .presentationDragIndicator(.visible)
         }
         #endif

@@ -9,7 +9,7 @@ import Foundation
 enum SharedAppGroup {
     /// Must match the App Group ID configured under Signing & Capabilities on
     /// both targets in Xcode.
-    static let identifier = "group.com.heartbeat.walkman"
+    static let identifier = "group.com.xingtiao.walkman"
 
     /// `UserDefaults` instance backed by the shared container. Use this for
     /// small structured data like "recent tracks" — *not* for large blobs.

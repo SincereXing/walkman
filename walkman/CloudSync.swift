@@ -66,9 +66,6 @@ extension CloudSync {
         /// 已删除歌单的墓碑(id → 删除时间)。没有它,删除无法跨设备传播:
         /// 其它设备仍持有的副本会被当成新歌单推回来。
         static let deletedPlaylists = "deletedPlaylists.v1"
-        /// Legacy: only stored script names/ids. Superseded by `scripts` which
-        /// carries the full UserScript bundle (rawScript included).
-        static let scriptIndex = "scriptIndex"
         /// Full user scripts (name, version, rawScript). Subject to the KV
         /// store's 1 MB cap — oversize bundles are silently skipped.
         static let scripts = "scripts.v1"

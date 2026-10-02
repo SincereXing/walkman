@@ -54,6 +54,7 @@
 | **歌单广场** | 按平台浏览推荐歌单（最热/最新排序 + 各平台专属标签筛选），歌单关键字搜索 |
 | **在线歌单导入** | 粘贴 **酷我 / 酷狗 / QQ / 网易云** 歌单分享链接（含微信分享新格式）一键**全量导入**——网易云走两步接口拿全曲目，千首大歌单分批写入不卡顿 |
 | **资料库** | 继续听、最近播放、我的歌单、听歌报告（播放统计）；歌单 iCloud 多端同步 |
+| **歌单导出 / 导入** | 设置页把歌单导出成自包含 JSON 文件，在另一台设备或另一个签名版本里导入。合并式导入（只增不覆盖），用于 iCloud 同步覆盖不到的场景——换开发者账号 / 换 bundle id 后新旧 app 的 KVS 存储区互相不可见 |
 | **下载** | 多音质下载，按 `歌手/专辑/曲目` 目录整理，内嵌完整元数据（标题/歌手/专辑/封面/歌词）；Mac 下载到 `~/Music/Walkman` |
 | **本地导入** | 选择文件夹递归扫描导入本地音乐，自动读取内嵌标签 |
 | **播放页** | 封面取色动态背景、黑胶唱盘 + 唱臂（iPad）、实时音浪、滚动歌词、**实测音频规格标注**（如 `FLAC 24bit/44.1kHz`，探测自真实流而非接口宣称） |
@@ -149,12 +150,12 @@ walkman/
 ├── Catalogs / Songlists / Boards         四平台直连：搜索 / 歌单 / 排行榜
 ├── SonglistImporter                      在线歌单链接解析与全量导入
 ├── Stores / CloudSync                    歌单/脚本/设置持久化 + iCloud 同步
+├── PlaylistTransfer                      歌单归档导出/导入（跨账号迁移）
 ├── DownloadStore / AudioMetadataWriter   下载管理 + 元数据嵌入
 ├── Lyrics / MvResolver / SongRecognizer  歌词 / MV / 听歌识曲
 └── Resources/user-api-preload.js         lx 协议预加载脚本（不可删改）
 docs/          功能规格与截图
 dmg/           Mac DMG 打包脚本与素材
-scripts/       历史下载迁移脚本（仅 Mac）
 ```
 
 ---
@@ -169,7 +170,7 @@ scripts/       历史下载迁移脚本（仅 Mac）
 
 ### 2. 改成你自己的 Bundle ID
 
-工程里的 `com.heartbeat.walkman` 系列 ID 绑定在原作者账号下，**你必须换成自己的**，否则签名会失败。在 Xcode 里对四个 target 各改一次（app / Widget / Tests / UITests），或全局替换 `com.heartbeat.walkman` 为你的前缀。同时 `walkman/walkman.entitlements` 与 `WalkmanWidgetExtension.entitlements` 里的 App Group `group.com.heartbeat.walkman` 也要一并改（Widget 与主 App 靠它共享数据）。
+工程里的 `com.xingtiao.walkman` 系列 ID 绑定在原作者账号下，**你必须换成自己的**，否则签名会失败。在 Xcode 里对四个 target 各改一次（app / Widget / Tests / UITests），或全局替换 `com.xingtiao.walkman` 为你的前缀。同时 `walkman/walkman.entitlements` 与 `WalkmanWidgetExtension.entitlements` 里的 App Group `group.com.xingtiao.walkman` 也要一并改（Widget 与主 App 靠它共享数据）。
 
 ### 3. 按需开关 Capability
 
@@ -177,10 +178,12 @@ scripts/       历史下载迁移脚本（仅 Mac）
 
 | Capability | 作用 | 去掉的后果 |
 |---|---|---|
-| iCloud (Key-Value storage) | 歌单/脚本多端同步 | 仅本地保存 |
+| iCloud (Key-Value storage) | 歌单/脚本多端同步 | 仅本地保存，可用设置页的歌单导出/导入代替 |
 | App Groups | Widget 与主 App 共享数据 | Widget 不显示内容 |
 | Siri | 语音点歌、快捷指令 | Siri 相关功能失效 |
-| Push Notifications | 预留 | 无影响 |
+| ShazamKit | 听歌识曲 | 识曲**不报错也不出结果**，一直听到超时报「未匹配」 |
+
+> ShazamKit 是唯一一个**没有 entitlement 文件对应项**的能力——它只存在于开发者后台的 App ID 服务里，工程文件中不留痕迹。所以换 Bundle ID 后自动签名不会带上它，编译和上传也都不会报错，只有运行时识曲功能悄悄失效。换 ID 后记得去 Identifiers 里手动勾选。
 
 ### 4. 编译
 
@@ -203,8 +206,6 @@ bash dmg/build-dmg.sh
 ```
 
 > 脚本优先使用放在 `build/dmg/walkman.app` 的 Developer ID 签名版，否则本地 Release 编译兜底；DMG 背景图与图标由 `dmg/make-background.swift`、`dmg/make-icns.swift` 生成。
-
-历史下载文件如需迁移到 `歌手/专辑/曲目` 新目录规则：运行 `scripts/migrate-downloads.swift`（仅 Mac 需要，iPhone/iPad 不涉及）。
 
 ---
 
