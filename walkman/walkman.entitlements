@@ -11,7 +11,7 @@
 	<string>$(TeamIdentifierPrefix)$(CFBundleIdentifier)</string>
 	<key>com.apple.security.application-groups</key>
 	<array>
-		<string>group.com.xingtiao.walkman</string>
+		<string>group.com.heartbeat.walkman</string>
 	</array>
 	<!-- Mac Catalyst:写到用户的 ~/Music/Walkman 目录 —— iOS 不看这个 key,Mac 上启用
 	     App Sandbox 后才有意义。dev build 不强制 sandbox 时也无害。 -->
